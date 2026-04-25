@@ -380,6 +380,7 @@ function pickRandomCharacter() {
 }
 
 function startRound() {
+  readStreakFile();
   clearRoundTimers();
 
   const character = pickRandomCharacter();
@@ -400,10 +401,10 @@ function startRound() {
   const answerPanel = document.getElementById("answerPanel");
   const promptText = document.getElementById("promptText");
 
-  const hideText = cfg.display && cfg.display.hideText;
+  const imageOnly = cfg.display && cfg.display.imageOnly;
   const titleEl = document.getElementById("title");
   if (titleEl) {
-    hideText ? titleEl.classList.add("hidden") : titleEl.classList.remove("hidden");
+    imageOnly ? titleEl.classList.add("hidden") : titleEl.classList.remove("hidden");
   }
 
   img.classList.add("silhouette", "loading");
@@ -411,7 +412,7 @@ function startRound() {
   placeholder.classList.add("hidden");
   answerPanel.classList.add("hidden");
   promptText.textContent = cfg.branding.promptText;
-  hideText ? promptText.classList.add("hidden") : promptText.classList.remove("hidden");
+  imageOnly ? promptText.classList.add("hidden") : promptText.classList.remove("hidden");
 
   loadCharacterImage(character);
 
@@ -427,19 +428,19 @@ function startRound() {
 function loadCharacterImage(character) {
   const img = document.getElementById("characterImage");
   const placeholder = document.getElementById("imagePlaceholder");
-  const placeholderSrc = state.config.files.placeholderImage || "images/placeholder.svg";
+  const placeholderSrc = state.config.files.placeholderImage || "images/placeholder.png";
 
   img.onload = null;
   img.onerror = null;
 
   img.onload = () => {
-    img.classList.remove("loading");
+    applySlideIn(img);
   };
 
   img.onerror = () => {
     state.warnings.push(`Image not found: ${character.imagePath} — using placeholder`);
     img.onerror = null;
-    img.onload = () => { img.classList.remove("loading"); };
+    img.onload = () => { applySlideIn(img); };
     if (placeholderSrc) {
       img.src = placeholderSrc;
       img.onerror = () => {
@@ -467,12 +468,6 @@ function revealAnswer(reason) {
 
   const cfg = state.config;
   const img = document.getElementById("characterImage");
-  const answerPanel = document.getElementById("answerPanel");
-  const correctTextEl = document.getElementById("correctText");
-  const answerNameEl = document.getElementById("answerName");
-  const winnerNameEl = document.getElementById("winnerName");
-  const winningMessageEl = document.getElementById("winningMessage");
-  const promptText = document.getElementById("promptText");
 
   img.classList.remove("silhouette");
 
@@ -519,6 +514,7 @@ function handleCorrectGuess(displayName, message) {
       state.streak.count = 1;
     }
     updateStreakDisplay();
+    writeStreakFile();
   }
 
   revealAnswer("correct");
@@ -533,9 +529,35 @@ function handleRoundTimeout() {
     state.streak.holder = null;
     state.streak.count = 0;
     updateStreakDisplay();
+    writeStreakFile();
   }
 
   revealAnswer("timeout");
+}
+
+function readStreakFile() {
+  fetch("/streak.json")
+    .then(r => r.ok ? r.json() : null)
+    .then(data => {
+      if (data && typeof data.streak === "number") {
+        state.streak.holder = data.winner || "";
+        state.streak.count = data.streak || 0;
+        updateStreakDisplay();
+      }
+    })
+    .catch(() => {});
+}
+
+function writeStreakFile() {
+  const data = {
+    winner: state.streak.holder || "",
+    streak: state.streak.count || 0
+  };
+  fetch("/write-streak", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data)
+  }).catch(() => {});
 }
 
 function updateStreakDisplay() {
@@ -544,7 +566,7 @@ function updateStreakDisplay() {
   const textEl = document.getElementById("streakText");
   if (!el || !textEl) return;
 
-  if (!streakCfg || !streakCfg.enabled || state.streak.count < 2) {
+  if (!streakCfg || !streakCfg.enabled || state.streak.count < 2 || (state.config.display && state.config.display.imageOnly)) {
     el.classList.add("hidden");
     return;
   }
@@ -556,12 +578,63 @@ function updateStreakDisplay() {
   el.classList.remove("hidden");
 }
 
-function clearScreen() {
+function getSlideTransform(direction) {
+  if (direction === "left")  return "translateX(-110vw)";
+  if (direction === "right") return "translateX(110vw)";
+  if (direction === "up")    return "translateY(-110vh)";
+  if (direction === "down")  return "translateY(110vh)";
+  return "";
+}
+
+function applySlideIn(img) {
+  const display = state.config.display || {};
+  const dir = display.slideInDirection;
+  if (dir && dir !== "none") {
+    // Set starting position while .loading has transition:none, then animate to center
+    img.style.transform = getSlideTransform(dir);
+    void img.offsetHeight; // force reflow so browser registers the starting position
+    img.classList.remove("loading");
+    img.style.transform = "";
+  } else {
+    img.classList.remove("loading");
+  }
+}
+
+function clearScreen(instant = false) {
   document.getElementById("title").classList.add("hidden");
-  document.getElementById("characterImage").classList.add("hidden");
   document.getElementById("promptText").classList.add("hidden");
   document.getElementById("answerPanel").classList.add("hidden");
   document.getElementById("streakDisplay").classList.add("hidden");
+
+  const img = document.getElementById("characterImage");
+  const display = state.config.display || {};
+  const dir = display.slideOutDirection;
+
+  if (!instant && dir && dir !== "none" && !img.classList.contains("hidden")) {
+    const durationMs = (display.slideDurationSeconds ?? 0.5) * 1000;
+    img.style.transform = getSlideTransform(dir);
+
+    const cleanup = () => {
+      img.classList.add("hidden");
+      img.style.transform = "";
+    };
+
+    const onEnd = (e) => {
+      if (e.propertyName !== "transform") return;
+      img.removeEventListener("transitionend", onEnd);
+      clearTimeout(fallback);
+      cleanup();
+    };
+    const fallback = setTimeout(() => {
+      img.removeEventListener("transitionend", onEnd);
+      cleanup();
+    }, durationMs + 100);
+
+    img.addEventListener("transitionend", onEnd);
+  } else {
+    img.classList.add("hidden");
+    img.style.transform = "";
+  }
 }
 
 function scheduleNextRound() {
@@ -697,8 +770,10 @@ function handleIrcLine(line) {
   if (!parsed) return;
 
   // Ignore own bot messages so the answer announcement can't trigger a match
-  const botLogin = (state.config.twitch.username || "").toLowerCase();
-  if (botLogin && parsed.login.toLowerCase() === botLogin) return;
+  if (state.config.twitch.ignoreBotAccount !== false) {
+    const botLogin = (state.config.twitch.username || "").toLowerCase();
+    if (botLogin && parsed.login.toLowerCase() === botLogin) return;
+  }
 
   state.lastUser = parsed.displayName;
   state.lastMessage = parsed.message;
@@ -830,9 +905,9 @@ function applyBranding() {
     promptEl.textContent = branding.promptText;
   }
 
-  // Hide title and prompt text if hideText is enabled
+  // Hide title and prompt text if imageOnly is enabled
   const display = state.config.display || {};
-  if (display.hideText) {
+  if (display.imageOnly) {
     const titleEl2 = document.getElementById("title");
     if (titleEl2) titleEl2.classList.add("hidden");
     const promptEl2 = document.getElementById("promptText");
@@ -845,6 +920,9 @@ function applyBranding() {
   }
   if (display.maxImageWidth) {
     document.documentElement.style.setProperty("--max-image-width", display.maxImageWidth);
+  }
+  if (display.slideDurationSeconds != null) {
+    document.documentElement.style.setProperty("--slide-duration", display.slideDurationSeconds + "s");
   }
 
   // Transparent background
@@ -1086,7 +1164,7 @@ async function main() {
       clearRoundTimers();
       clearTimeout(state.timers.reconnect);
       disconnectTwitchChat();
-      clearScreen();
+      clearScreen(true);
     } else {
       state.recentIrcLines = [];
       connectTwitchChat();

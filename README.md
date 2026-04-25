@@ -267,7 +267,10 @@ Controls all text shown on the overlay and posted to chat. Supports `{winner}`, 
 | Key | Default | Description |
 |-----|---------|-------------|
 | `showConnectionStatus` | `true` | Show/hide the connection indicator |
-| `hideText` | `false` | Hide the game title and prompt text (image-only mode) |
+| `imageOnly` | `false` | Hide the game title and prompt text, leaving only the character image |
+| `slideOutDirection` | `"none"` | Direction the image slides out when a round ends (`none`, `left`, `right`, `up`, `down`) |
+| `slideInDirection` | `"none"` | Direction the image slides in when a new round starts (`none`, `left`, `right`, `up`, `down`) |
+| `slideDurationSeconds` | `0.5` | How long the slide animation takes |
 | `showDebugPanel` | `false` | Show the debug panel |
 | `maxImageHeight` | `"70vh"` | Max height of the character image |
 | `maxImageWidth` | `"90vw"` | Max width of the character image |

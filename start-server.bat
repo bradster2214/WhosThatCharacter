@@ -8,9 +8,5 @@ if errorlevel 1 (
     exit /b 1
 )
 
-echo Starting Who's That Character server...
-echo Open OBS Browser Source at: http://127.0.0.1:8787/index.html
-echo Press Ctrl+C to stop.
-echo.
-python -m http.server 8787
+python server.py
 pause

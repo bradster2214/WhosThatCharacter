@@ -2,17 +2,17 @@
   "branding": {
     "gameTitle": "Who's That Character?",
     "promptText": "Type your guess in chat!",
-    "correctText": "Correct!",
     "noWinnerText": "No one got it!",
-    "nextRoundText": "Next character coming up...",
     "winnerTextTemplate": "{winner} got it!",
+    "winnerStreakTextTemplate": "{winner} got it! It was {character}! {streak} streak!",
     "answerTextTemplate": "It was {character}!"
   },
   "channel": "your_channel_here",
   "twitch": {
     "useAuth": true,
     "username": "",
-    "oauthToken": ""
+    "oauthToken": "",
+    "ignoreBotAccount": true
   },
   "files": {
     "characterList": "characters.txt",
@@ -30,24 +30,22 @@
     "recentHistorySize": 10
   },
   "display": {
-    "silhouetteMode": "css-filter",
-    "showHintText": true,
     "showDebugPanel": false,
     "showConnectionStatus": true,
     "transparentBackground": true,
     "maxImageHeight": "70vh",
-    "maxImageWidth": "90vw"
-  },
-  "matching": {
-    "caseInsensitive": true,
-    "ignorePunctuation": true,
-    "ignoreExtraSpaces": true,
-    "ignoreHyphensAndUnderscores": true,
-    "ignoreApostrophes": true,
-    "allowExactOnly": false,
-    "allowContains": true
+    "maxImageWidth": "90vw",
+    "imageOnly": false,
+    "slideOutDirection": "none",
+    "slideInDirection": "none",
+    "slideDurationSeconds": 0.5
   },
   "controls": {
     "enableKeyboardControls": true
+  },
+  "streak": {
+    "enabled": true,
+    "announceThreshold": 2,
+    "overlayTemplate": "{winner} x{streak}"
   }
 }

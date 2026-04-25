@@ -1,4 +1,5 @@
 config.local.json
 characters.txt
+streak.json
 /images/*
 !/images/placeholder.png

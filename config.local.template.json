@@ -27,34 +27,63 @@
     "username": "your_bot_account",
     // OAuth token for the bot account — needs chat:read and chat:write scopes
     // Generate one at twitchtokengenerator.com
-    "oauthToken": "oauth:your_token_here"
+    "oauthToken": "oauth:your_token_here",
+    // Set to false if your bot account is the same as your channel account and you want your own messages to count as guesses
+    "ignoreBotAccount": true
   },
 
   "files": {
     // Path to your character list file
     "characterList": "characters.txt",
+    // Fallback character list used if characterList is missing
+    "fallbackCharacterList": "characters.example.txt",
+    // Folder where character images are stored
+    "imageFolder": "images",
     // File extension for character images (png, jpg, svg, etc.)
-    "imageExtension": "png"
+    "imageExtension": "png",
+    // Image shown when a character's image file is missing
+    "placeholderImage": "images/placeholder.png"
   },
 
   "display": {
     // Hide the "connected to #channel" indicator in the top right
     "showConnectionStatus": false,
-    // Hide the game title and prompt text (useful if you want image-only)
-    "hideText": false,
+    // Show the debug panel (useful for diagnosing connection or matching issues)
+    "showDebugPanel": false,
+    // Set to false to use a dark background instead of transparent (useful for testing outside OBS)
+    "transparentBackground": true,
+    // Hide the game title and prompt text, leaving only the character image
+    "imageOnly": false,
+    // Direction the image slides OUT when a round ends (none, left, right, up, down)
+    "slideOutDirection": "none",
+    // Direction the image slides IN when a new round starts (none, left, right, up, down)
+    "slideInDirection": "none",
+    // How long the slide animation takes, in seconds
+    "slideDurationSeconds": 0.5,
     // How large the character image can get
     "maxImageHeight": "82vh",
     "maxImageWidth": "95vw"
   },
 
   "round": {
+    // Automatically start the first round when the overlay loads
+    "autoStart": true,
     // How many seconds before the answer is auto-revealed with no correct guess
     // Set to 0 to disable the timer (round runs until someone gets it)
     "roundDurationSeconds": 60,
     // How many seconds to show the revealed answer before moving on
     "revealDurationSeconds": 7,
     // How many seconds to wait after the reveal before starting the next round
-    "betweenRoundsSeconds": 3
+    "betweenRoundsSeconds": 3,
+    // Avoid picking a character that was shown recently
+    "avoidImmediateRepeats": true,
+    // How many recent picks to remember when avoiding repeats
+    "recentHistorySize": 10
+  },
+
+  "controls": {
+    // Enable keyboard shortcuts (N = next, R = reveal, D = debug, S = silhouette, P = pick, Space = reveal/next)
+    "enableKeyboardControls": true
   },
 
   "streak": {
