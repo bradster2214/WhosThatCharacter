@@ -1,7 +1,4 @@
 config.local.json
 characters.txt
 /images/*
-!/images/placeholder.svg
-!/images/Blue Wizard.svg
-!/images/Red Knight.svg
-!/images/Green Archer.svg
+!/images/placeholder.png

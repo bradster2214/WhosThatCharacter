@@ -75,17 +75,17 @@ html, body {
   padding: 24px 20px 28px;
   max-width: 960px;
   width: 100%;
+  max-height: 100vh;
+  overflow: hidden;
 }
 
 /* ---- Title ---- */
 .game-title {
-  font-size: clamp(1.6rem, 4vw, 2.6rem);
+  font-size: clamp(2rem, 5vw, 3.4rem);
   font-weight: 700;
   color: var(--color-title);
   text-align: center;
-  text-shadow:
-    0 2px 8px var(--color-text-shadow),
-    0 0 20px rgba(255, 220, 80, 0.3);
+  text-shadow: 1px 1px 2px #000, -1px -1px 2px #000, 1px -1px 2px #000, -1px 1px 2px #000, 0 0 20px rgba(255, 220, 80, 0.3);
   letter-spacing: 0.03em;
 }
 
@@ -95,7 +95,8 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 120px;
+  min-height: 0;
+  flex-shrink: 1;
 }
 
 .character-image {
@@ -132,12 +133,23 @@ html, body {
   user-select: none;
 }
 
+/* ---- Streak display ---- */
+.streak-display {
+  font-size: clamp(1.2rem, 2.8vw, 1.8rem);
+  font-weight: 600;
+  color: #ff9f1c;
+  text-shadow: 1px 1px 2px #000, -1px -1px 2px #000, 1px -1px 2px #000, -1px 1px 2px #000;
+  text-align: center;
+  letter-spacing: 0.03em;
+  animation: fadeSlideIn 0.3s ease;
+}
+
 /* ---- Prompt text ---- */
 .prompt-text {
-  font-size: clamp(1rem, 2.5vw, 1.45rem);
+  font-size: clamp(1.6rem, 3.8vw, 2.6rem);
   color: var(--color-prompt);
   text-align: center;
-  text-shadow: 0 1px 5px var(--color-text-shadow);
+  text-shadow: 1px 1px 2px #000, -1px -1px 2px #000, 1px -1px 2px #000, -1px 1px 2px #000;
   transition: opacity 0.3s;
 }
 
@@ -161,21 +173,21 @@ html, body {
 }
 
 .correct-text {
-  font-size: clamp(1.4rem, 3.5vw, 2.2rem);
+  font-size: clamp(1.8rem, 4.5vw, 3rem);
   font-weight: 700;
   color: var(--color-correct);
   text-shadow: 0 0 16px rgba(100, 255, 130, 0.55), 0 2px 6px var(--color-text-shadow);
 }
 
 .answer-name {
-  font-size: clamp(1.1rem, 2.8vw, 1.7rem);
+  font-size: clamp(1.4rem, 3.5vw, 2.2rem);
   font-weight: 600;
   color: var(--color-answer);
   text-shadow: 0 1px 6px var(--color-text-shadow);
 }
 
 .winner-name {
-  font-size: clamp(0.95rem, 2.2vw, 1.3rem);
+  font-size: clamp(1.2rem, 2.8vw, 1.8rem);
   color: var(--color-winner);
   text-shadow: 0 1px 5px var(--color-text-shadow);
 }

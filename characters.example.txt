@@ -1,5 +1,5 @@
 # Example characters — copy this file to characters.txt and edit it.
-# Format: Canonical Character Name|alias one|alias two|nickname
+# Format: Canonical Character Name|alias one|alias two|etc.
 # The canonical name must match the image filename (without extension).
 # Lines starting with # are ignored. Blank lines are ignored.
 

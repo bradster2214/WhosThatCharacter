@@ -1,15 +1,70 @@
 {
+  // Your Twitch channel name (all lowercase)
   "channel": "your_channel_name",
+
   "branding": {
-    "gameTitle": "Who's That Character?"
+    // Title shown on the overlay. Set to " " to hide it entirely.
+    "gameTitle": "Who's That Character?",
+    // Text shown below the silhouette during an active round
+    "promptText": "Type your guess in chat!",
+    // Chat message when someone guesses correctly (no streak)
+    // {winner} = display name, {character} = canonical character name
+    "winnerTextTemplate": "{winner} got it!",
+    // Chat message when someone guesses correctly and has an active streak
+    // {winner} = display name, {character} = character name, {streak} = streak count
+    "winnerStreakTextTemplate": "{winner} got it! It was {character}! {streak} streak!",
+    // Included in the non-streak win message after the winner text
+    // {character} = canonical character name
+    "answerTextTemplate": "It was {character}!",
+    // Chat message when nobody guesses in time
+    "noWinnerText": "No one got it!"
   },
+
   "twitch": {
+    // Set to true to use an authenticated bot account (required to send chat messages)
     "useAuth": true,
+    // The Twitch username of your bot account
     "username": "your_bot_account",
+    // OAuth token for the bot account — needs chat:read and chat:write scopes
+    // Generate one at twitchtokengenerator.com
     "oauthToken": "oauth:your_token_here"
   },
+
   "files": {
+    // Path to your character list file
     "characterList": "characters.txt",
+    // File extension for character images (png, jpg, svg, etc.)
     "imageExtension": "png"
+  },
+
+  "display": {
+    // Hide the "connected to #channel" indicator in the top right
+    "showConnectionStatus": false,
+    // Hide the game title and prompt text (useful if you want image-only)
+    "hideText": false,
+    // How large the character image can get
+    "maxImageHeight": "82vh",
+    "maxImageWidth": "95vw"
+  },
+
+  "round": {
+    // How many seconds before the answer is auto-revealed with no correct guess
+    // Set to 0 to disable the timer (round runs until someone gets it)
+    "roundDurationSeconds": 60,
+    // How many seconds to show the revealed answer before moving on
+    "revealDurationSeconds": 7,
+    // How many seconds to wait after the reveal before starting the next round
+    "betweenRoundsSeconds": 3
+  },
+
+  "streak": {
+    // Set to false to disable streak tracking entirely
+    "enabled": true,
+    // How many consecutive correct answers before the streak appears in the win message
+    // e.g. 2 means it shows from the second correct answer onward
+    "announceThreshold": 2,
+    // Text shown on the overlay while a streak is active (hidden if count < 2)
+    // {winner} = display name, {streak} = count
+    "overlayTemplate": "{winner} x{streak}"
   }
 }

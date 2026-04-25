@@ -31,6 +31,11 @@ const state = {
 
   recentPicks: [],
 
+  streak: {
+    holder: null,
+    count: 0
+  },
+
   timers: {
     reveal: null,
     nextRound: null,
@@ -74,6 +79,13 @@ function deepMerge(base, override) {
 // Config loading
 // ---------------------------------------------------------------------------
 
+function stripJsonComments(str) {
+  // Remove // line comments and /* block comments */ so config files can be annotated
+  return str
+    .replace(/\/\/[^\n]*/g, "")
+    .replace(/\/\*[\s\S]*?\*\//g, "");
+}
+
 async function loadJson(path, optional = false) {
   try {
     const response = await fetch(path);
@@ -81,7 +93,8 @@ async function loadJson(path, optional = false) {
       if (optional) return null;
       throw new Error(`HTTP ${response.status} loading ${path}`);
     }
-    return await response.json();
+    const text = await response.text();
+    return JSON.parse(stripJsonComments(text));
   } catch (err) {
     if (optional) return null;
     throw err;
@@ -130,8 +143,19 @@ function normalizeGuess(text) {
     .trim()
     .replace(/['']/g, "")
     .replace(/[-_]/g, " ")
-    .replace(/[^\p{L}\p{N}\s.]/gu, "")
+    .replace(/[^\p{L}\p{N}\s]/gu, "")
     .replace(/\s+/g, " ");
+}
+
+function parseRegexAlias(str) {
+  // Matches /pattern/ or /pattern/flags
+  const m = str.match(/^\/(.+)\/([gimsuy]*)$/);
+  if (!m) return null;
+  try {
+    return new RegExp(m[1], m[2]);
+  } catch (_) {
+    return null;
+  }
 }
 
 function parseCharacterLine(line, cfg) {
@@ -139,7 +163,20 @@ function parseCharacterLine(line, cfg) {
   if (parts.length === 0) return null;
 
   const canonicalName = parts[0];
-  const aliases = parts;
+
+  const literalAliases = [];
+  const regexAliases = [];
+
+  for (const part of parts) {
+    const rx = parseRegexAlias(part);
+    if (rx) {
+      regexAliases.push(rx);
+    } else {
+      literalAliases.push(part);
+    }
+  }
+
+  const aliases = literalAliases;
   const normalizedAliases = aliases.map(normalizeGuess);
   const imageFolder = cfg.files.imageFolder || "images";
   const imageExtension = cfg.files.imageExtension || "png";
@@ -149,6 +186,7 @@ function parseCharacterLine(line, cfg) {
     canonicalName,
     aliases,
     normalizedAliases,
+    regexAliases,
     imagePath,
     rawLine: line
   };
@@ -253,6 +291,27 @@ async function loadCharacterList() {
 // Guess checking
 // ---------------------------------------------------------------------------
 
+// Scan all characters and return which ones match the guess, split by match type.
+function findMatchingCharacters(guess) {
+  const exact = [];
+  const contains = [];
+  const regex = [];
+
+  for (const char of state.characters) {
+    const isExact = char.normalizedAliases.some(a => a === guess);
+    if (isExact) {
+      exact.push(char);
+      continue;
+    }
+    const isContains = char.normalizedAliases.some(a => guess.includes(a));
+    if (isContains) contains.push(char);
+
+    if (char.regexAliases.some(rx => rx.test(guess))) regex.push(char);
+  }
+
+  return { exact, contains, regex };
+}
+
 function checkGuess(message) {
   if (!state.roundActive || state.revealed || !state.currentCharacter) {
     return false;
@@ -266,9 +325,24 @@ function checkGuess(message) {
     return false;
   }
 
-  const matched = state.currentCharacter.normalizedAliases.includes(guess);
-  state.lastGuessMatched = matched;
-  return matched;
+  const current = state.currentCharacter;
+  const { exact, contains, regex } = findMatchingCharacters(guess);
+
+  // Exact match: accept if current character is an exact match, regardless of
+  // other characters also matching via contains.
+  if (exact.length > 0) {
+    state.lastGuessMatched = exact.some(c => c === current);
+    return state.lastGuessMatched;
+  }
+
+  // No exact matches — gather all loose matches (contains + regex, deduplicated).
+  const loose = [...new Set([...contains, ...regex])];
+
+  // Only accept if the current character is the sole matching character.
+  // Two or more matches means the guess is ambiguous (e.g. "christmas biwa hayahide"
+  // would match both "Biwa Hayahide" and "Christmas Biwa Hayahide" via contains).
+  state.lastGuessMatched = loose.length === 1 && loose[0] === current;
+  return state.lastGuessMatched;
 }
 
 // ---------------------------------------------------------------------------
@@ -326,12 +400,18 @@ function startRound() {
   const answerPanel = document.getElementById("answerPanel");
   const promptText = document.getElementById("promptText");
 
+  const hideText = cfg.display && cfg.display.hideText;
+  const titleEl = document.getElementById("title");
+  if (titleEl) {
+    hideText ? titleEl.classList.add("hidden") : titleEl.classList.remove("hidden");
+  }
+
   img.classList.add("silhouette", "loading");
   img.classList.remove("hidden");
   placeholder.classList.add("hidden");
   answerPanel.classList.add("hidden");
   promptText.textContent = cfg.branding.promptText;
-  promptText.classList.remove("hidden");
+  hideText ? promptText.classList.add("hidden") : promptText.classList.remove("hidden");
 
   loadCharacterImage(character);
 
@@ -401,15 +481,25 @@ function revealAnswer(reason) {
   const answerText = answerTemplate.replace("{character}", character.canonicalName);
 
   if (state.winner) {
-    const winnerTemplate = cfg.branding.winnerTextTemplate || "{winner} got it!";
-    const winnerText = winnerTemplate.replace("{winner}", state.winner);
-    sendChatMessage(`${winnerText} ${answerText}`);
+    const streakCfg = state.config.streak;
+    const hasStreak = streakCfg && streakCfg.enabled && state.streak.count >= (streakCfg.announceThreshold ?? 2);
+
+    if (hasStreak) {
+      const streakTemplate = cfg.branding.winnerStreakTextTemplate || "{winner} got it! It was {character}! {streak} streak!";
+      sendChatMessage(streakTemplate
+        .replace("{winner}", state.winner)
+        .replace("{character}", state.currentCharacter.canonicalName)
+        .replace("{streak}", state.streak.count)
+      );
+    } else {
+      const winnerTemplate = cfg.branding.winnerTextTemplate || "{winner} got it!";
+      const winnerText = winnerTemplate.replace("{winner}", state.winner);
+      sendChatMessage(`${winnerText} ${answerText}`);
+    }
   } else {
     const noWinner = cfg.branding.noWinnerText || "No one got it!";
     sendChatMessage(`${noWinner} ${answerText}`);
   }
-
-  promptText.textContent = cfg.branding.nextRoundText || "Next character coming up...";
 
   scheduleNextRound();
   updateDebugPanel();
@@ -419,23 +509,74 @@ function handleCorrectGuess(displayName, message) {
   if (state.revealed) return;
   state.winner = displayName;
   state.winningMessage = message;
+
+  const streakCfg = state.config.streak;
+  if (streakCfg && streakCfg.enabled) {
+    if (displayName === state.streak.holder) {
+      state.streak.count++;
+    } else {
+      state.streak.holder = displayName;
+      state.streak.count = 1;
+    }
+    updateStreakDisplay();
+  }
+
   revealAnswer("correct");
 }
 
 function handleRoundTimeout() {
   if (state.revealed) return;
   state.winner = null;
+
+  const streakCfg = state.config.streak;
+  if (streakCfg && streakCfg.enabled && state.streak.count > 0) {
+    state.streak.holder = null;
+    state.streak.count = 0;
+    updateStreakDisplay();
+  }
+
   revealAnswer("timeout");
+}
+
+function updateStreakDisplay() {
+  const streakCfg = state.config.streak;
+  const el = document.getElementById("streakDisplay");
+  const textEl = document.getElementById("streakText");
+  if (!el || !textEl) return;
+
+  if (!streakCfg || !streakCfg.enabled || state.streak.count < 2) {
+    el.classList.add("hidden");
+    return;
+  }
+
+  const template = streakCfg.overlayTemplate || "{winner} x{streak}";
+  textEl.textContent = template
+    .replace("{winner}", state.streak.holder)
+    .replace("{streak}", state.streak.count);
+  el.classList.remove("hidden");
+}
+
+function clearScreen() {
+  document.getElementById("title").classList.add("hidden");
+  document.getElementById("characterImage").classList.add("hidden");
+  document.getElementById("promptText").classList.add("hidden");
+  document.getElementById("answerPanel").classList.add("hidden");
+  document.getElementById("streakDisplay").classList.add("hidden");
 }
 
 function scheduleNextRound() {
   const cfg = state.config;
   if (!cfg.round.autoStart) return;
 
-  const delay =
-    ((cfg.round.revealDurationSeconds || 7) + (cfg.round.betweenRoundsSeconds || 2)) * 1000;
+  const revealMs  = (cfg.round.revealDurationSeconds || 7) * 1000;
+  const betweenMs = (cfg.round.betweenRoundsSeconds || 2) * 1000;
 
-  state.timers.nextRound = setTimeout(() => startRound(), delay);
+  // After the reveal period, go blank
+  state.timers.reveal = setTimeout(() => {
+    clearScreen();
+    // Then start the next round after the between-rounds gap
+    state.timers.nextRound = setTimeout(() => startRound(), betweenMs);
+  }, revealMs);
 }
 
 // ---------------------------------------------------------------------------
@@ -689,8 +830,16 @@ function applyBranding() {
     promptEl.textContent = branding.promptText;
   }
 
-  // CSS custom properties from display config
+  // Hide title and prompt text if hideText is enabled
   const display = state.config.display || {};
+  if (display.hideText) {
+    const titleEl2 = document.getElementById("title");
+    if (titleEl2) titleEl2.classList.add("hidden");
+    const promptEl2 = document.getElementById("promptText");
+    if (promptEl2) promptEl2.classList.add("hidden");
+  }
+
+  // CSS custom properties from display config
   if (display.maxImageHeight) {
     document.documentElement.style.setProperty("--max-image-height", display.maxImageHeight);
   }
@@ -785,6 +934,7 @@ function updateDebugPanel() {
     ``,
     `Current    : ${char ? char.canonicalName : "—"}`,
     `Aliases    : ${char ? char.aliases.join(" | ") : "—"}`,
+    `Regex      : ${char && char.regexAliases.length > 0 ? char.regexAliases.map(r => r.toString()).join(" | ") : "—"}`,
     `Image path : ${char ? char.imagePath : "—"}`,
     ``,
     `Last user  : ${state.lastUser || "—"}`,
@@ -793,7 +943,8 @@ function updateDebugPanel() {
     `Matched    : ${state.lastGuessMatched}`,
     `Winner     : ${state.winner || "—"}`,
     ``,
-    `Recent picks: ${state.recentPicks.join(", ") || "—"}`
+    `Recent picks: ${state.recentPicks.join(", ") || "—"}`,
+    `Streak     : ${state.streak.holder ? `${state.streak.holder} x${state.streak.count}` : "—"}`
   ];
 
   if (state.recentIrcLines.length > 0) {
@@ -838,6 +989,9 @@ function setupKeyboardControls() {
       case "S":
         toggleSilhouette();
         break;
+      case "P":
+        pickCharacterByPrompt();
+        break;
       case " ":
         e.preventDefault();
         if (!state.revealed) {
@@ -848,6 +1002,37 @@ function setupKeyboardControls() {
         break;
     }
   });
+}
+
+function pickCharacterByPrompt() {
+  const input = prompt("Force character (partial name ok):");
+  if (!input) return;
+  const search = input.toLowerCase().trim();
+  const match = state.characters.find(c => c.canonicalName.toLowerCase().includes(search));
+  if (!match) {
+    alert(`No character found matching "${input}"`);
+    return;
+  }
+  clearRoundTimers();
+  state.currentCharacter = match;
+  state.roundActive = true;
+  state.revealed = false;
+  state.winner = null;
+  state.winningMessage = "";
+  state.recentPicks.push(match.canonicalName);
+  state.recentPicks = state.recentPicks.slice(-state.config.round.recentHistorySize);
+
+  const img = document.getElementById("characterImage");
+  const placeholder = document.getElementById("imagePlaceholder");
+  const answerPanel = document.getElementById("answerPanel");
+  const promptText = document.getElementById("promptText");
+  img.classList.add("silhouette", "loading");
+  img.classList.remove("hidden");
+  placeholder.classList.add("hidden");
+  answerPanel.classList.add("hidden");
+  promptText.textContent = state.config.branding.promptText;
+  loadCharacterImage(match);
+  updateDebugPanel();
 }
 
 function toggleDebugPanel() {
@@ -894,6 +1079,20 @@ async function main() {
 
   // Set up keyboard
   setupKeyboardControls();
+
+  // Pause when OBS hides the source, resume when it shows it again
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") {
+      clearRoundTimers();
+      clearTimeout(state.timers.reconnect);
+      disconnectTwitchChat();
+      clearScreen();
+    } else {
+      state.recentIrcLines = [];
+      connectTwitchChat();
+      if (state.config.round.autoStart) startRound();
+    }
+  });
 
   // Connect to Twitch
   connectTwitchChat();

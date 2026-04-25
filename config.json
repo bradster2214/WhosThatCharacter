@@ -19,7 +19,7 @@
     "fallbackCharacterList": "characters.example.txt",
     "imageFolder": "images",
     "imageExtension": "png",
-    "placeholderImage": "images/placeholder.svg"
+    "placeholderImage": "images/placeholder.png"
   },
   "round": {
     "autoStart": true,
@@ -44,8 +44,8 @@
     "ignoreExtraSpaces": true,
     "ignoreHyphensAndUnderscores": true,
     "ignoreApostrophes": true,
-    "allowExactOnly": true,
-    "allowContains": false
+    "allowExactOnly": false,
+    "allowContains": true
   },
   "controls": {
     "enableKeyboardControls": true
