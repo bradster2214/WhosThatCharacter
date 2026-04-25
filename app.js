@@ -472,28 +472,27 @@ function revealAnswer(reason) {
   img.classList.remove("silhouette");
 
   const character = state.currentCharacter;
-  const answerTemplate = cfg.branding.answerTextTemplate || "It was {character}!";
-  const answerText = answerTemplate.replace("{character}", character.canonicalName);
 
   if (state.winner) {
     const streakCfg = state.config.streak;
     const hasStreak = streakCfg && streakCfg.enabled && state.streak.count >= (streakCfg.announceThreshold ?? 2);
 
     if (hasStreak) {
-      const streakTemplate = cfg.branding.winnerStreakTextTemplate || "{winner} got it! It was {character}! {streak} streak!";
-      sendChatMessage(streakTemplate
+      const msg = (cfg.branding.winnerStreakText || "{winner} got it! It was {character}! {streak} streak!")
         .replace("{winner}", state.winner)
-        .replace("{character}", state.currentCharacter.canonicalName)
-        .replace("{streak}", state.streak.count)
-      );
+        .replace("{character}", character.canonicalName)
+        .replace("{streak}", state.streak.count);
+      sendChatMessage(msg);
     } else {
-      const winnerTemplate = cfg.branding.winnerTextTemplate || "{winner} got it!";
-      const winnerText = winnerTemplate.replace("{winner}", state.winner);
-      sendChatMessage(`${winnerText} ${answerText}`);
+      const msg = (cfg.branding.winnerText || "{winner} got it! It was {character}!")
+        .replace("{winner}", state.winner)
+        .replace("{character}", character.canonicalName);
+      sendChatMessage(msg);
     }
   } else {
-    const noWinner = cfg.branding.noWinnerText || "No one got it!";
-    sendChatMessage(`${noWinner} ${answerText}`);
+    const msg = (cfg.branding.noWinnerText || "No one got it! It was {character}!")
+      .replace("{character}", character.canonicalName);
+    sendChatMessage(msg);
   }
 
   scheduleNextRound();
@@ -637,6 +636,39 @@ function clearScreen(instant = false) {
   }
 }
 
+function checkIsLive(callback) {
+  if (window.obsstudio && typeof window.obsstudio.getStatus === "function") {
+    window.obsstudio.getStatus(status => callback(status.streaming || status.recording));
+  } else {
+    callback(true); // not in OBS, or OBS version doesn't support getStatus — assume live
+  }
+}
+
+function waitForLive() {
+  state.timers.nextRound = setTimeout(() => {
+    checkIsLive(isLive => {
+      if (isLive) {
+        const delayMs = (state.config.round.goLiveDelaySeconds || 0) * 1000;
+        if (delayMs > 0) {
+          state.timers.nextRound = setTimeout(() => startRound(), delayMs);
+        } else {
+          startRound();
+        }
+      } else {
+        waitForLive(); // keep polling every 5s
+      }
+    });
+  }, 5000);
+}
+
+function startRoundWhenReady() {
+  if (state.config.round.pauseWhenNotLive) {
+    checkIsLive(isLive => isLive ? startRound() : waitForLive());
+  } else {
+    startRound();
+  }
+}
+
 function scheduleNextRound() {
   const cfg = state.config;
   if (!cfg.round.autoStart) return;
@@ -648,7 +680,7 @@ function scheduleNextRound() {
   state.timers.reveal = setTimeout(() => {
     clearScreen();
     // Then start the next round after the between-rounds gap
-    state.timers.nextRound = setTimeout(() => startRound(), betweenMs);
+    state.timers.nextRound = setTimeout(() => startRoundWhenReady(), betweenMs);
   }, revealMs);
 }
 
@@ -1168,7 +1200,7 @@ async function main() {
     } else {
       state.recentIrcLines = [];
       connectTwitchChat();
-      if (state.config.round.autoStart) startRound();
+      if (state.config.round.autoStart) startRoundWhenReady();
     }
   });
 
@@ -1177,7 +1209,7 @@ async function main() {
 
   // Start first round
   if (state.config.round.autoStart) {
-    startRound();
+    startRoundWhenReady();
   } else {
     const promptEl = document.getElementById("promptText");
     if (promptEl) promptEl.textContent = "Press N to start a round.";

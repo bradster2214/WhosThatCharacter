@@ -2,10 +2,9 @@
   "branding": {
     "gameTitle": "Who's That Character?",
     "promptText": "Type your guess in chat!",
-    "noWinnerText": "No one got it!",
-    "winnerTextTemplate": "{winner} got it!",
-    "winnerStreakTextTemplate": "{winner} got it! It was {character}! {streak} streak!",
-    "answerTextTemplate": "It was {character}!"
+    "winnerText": "{winner} got it! It was {character}!",
+    "winnerStreakText": "{winner} got it! It was {character}! {streak} streak!",
+    "noWinnerText": "No one got it! It was {character}!"
   },
   "channel": "your_channel_here",
   "twitch": {
@@ -27,7 +26,9 @@
     "revealDurationSeconds": 7,
     "betweenRoundsSeconds": 2,
     "avoidImmediateRepeats": true,
-    "recentHistorySize": 10
+    "recentHistorySize": 10,
+    "pauseWhenNotLive": false,
+    "goLiveDelaySeconds": 0
   },
   "display": {
     "showDebugPanel": false,

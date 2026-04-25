@@ -9,15 +9,13 @@
     "promptText": "Type your guess in chat!",
     // Chat message when someone guesses correctly (no streak)
     // {winner} = display name, {character} = canonical character name
-    "winnerTextTemplate": "{winner} got it!",
+    "winnerText": "{winner} got it! It was {character}!",
     // Chat message when someone guesses correctly and has an active streak
     // {winner} = display name, {character} = character name, {streak} = streak count
-    "winnerStreakTextTemplate": "{winner} got it! It was {character}! {streak} streak!",
-    // Included in the non-streak win message after the winner text
-    // {character} = canonical character name
-    "answerTextTemplate": "It was {character}!",
+    "winnerStreakText": "{winner} got it! It was {character}! {streak} streak!",
     // Chat message when nobody guesses in time
-    "noWinnerText": "No one got it!"
+    // {character} = canonical character name
+    "noWinnerText": "No one got it! It was {character}!"
   },
 
   "twitch": {
@@ -78,7 +76,13 @@
     // Avoid picking a character that was shown recently
     "avoidImmediateRepeats": true,
     // How many recent picks to remember when avoiding repeats
-    "recentHistorySize": 10
+    "recentHistorySize": 10,
+    // When true, the next round won't start until OBS is streaming or recording
+    // Useful for live streams — set to false when testing offline
+    "pauseWhenNotLive": false,
+    // How many seconds to wait after going live before the first round starts
+    // Gives you time to get settled before the game begins. 0 = start immediately
+    "goLiveDelaySeconds": 0
   },
 
   "controls": {
