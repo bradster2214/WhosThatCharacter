@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Who's That Character?</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+
+    <div id="connectionStatus" class="connection-status hidden"></div>
+
+    <main id="gameCard">
+      <div id="title" class="game-title">Who's That Character?</div>
+
+      <div id="imageWrap" class="image-wrap">
+        <img
+          id="characterImage"
+          class="character-image silhouette"
+          alt="Character silhouette"
+          src=""
+        />
+        <div id="imagePlaceholder" class="image-placeholder hidden">?</div>
+      </div>
+
+      <div id="promptText" class="prompt-text">Type your guess in chat!</div>
+
+      <section id="answerPanel" class="answer-panel hidden">
+        <div id="correctText" class="correct-text">Correct!</div>
+        <div id="answerName" class="answer-name"></div>
+        <div id="winnerName" class="winner-name"></div>
+        <div id="winningMessage" class="winning-message"></div>
+      </section>
+    </main>
+
+    <aside id="debugPanel" class="debug-panel hidden">
+      <div class="debug-header">Debug Panel</div>
+      <div id="debugContent" class="debug-content"></div>
+    </aside>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+{
+  "branding": {
+    "gameTitle": "Who's That Character?",
+    "promptText": "Type your guess in chat!",
+    "correctText": "Correct!",
+    "noWinnerText": "No one got it!",
+    "nextRoundText": "Next character coming up...",
+    "winnerTextTemplate": "{winner} got it!",
+    "answerTextTemplate": "It was {character}!"
+  },
+  "channel": "your_channel_here",
+  "twitch": {
+    "useAuth": true,
+    "username": "",
+    "oauthToken": ""
+  },
+  "files": {
+    "characterList": "characters.txt",
+    "fallbackCharacterList": "characters.example.txt",
+    "imageFolder": "images",
+    "imageExtension": "png",
+    "placeholderImage": "images/placeholder.svg"
+  },
+  "round": {
+    "autoStart": true,
+    "roundDurationSeconds": 0,
+    "revealDurationSeconds": 7,
+    "betweenRoundsSeconds": 2,
+    "avoidImmediateRepeats": true,
+    "recentHistorySize": 10
+  },
+  "display": {
+    "silhouetteMode": "css-filter",
+    "showHintText": true,
+    "showDebugPanel": false,
+    "showConnectionStatus": true,
+    "transparentBackground": true,
+    "maxImageHeight": "70vh",
+    "maxImageWidth": "90vw"
+  },
+  "matching": {
+    "caseInsensitive": true,
+    "ignorePunctuation": true,
+    "ignoreExtraSpaces": true,
+    "ignoreHyphensAndUnderscores": true,
+    "ignoreApostrophes": true,
+    "allowExactOnly": true,
+    "allowContains": false
+  },
+  "controls": {
+    "enableKeyboardControls": true
+  }
+}

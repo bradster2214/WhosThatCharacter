@@ -1,0 +1,15 @@
+{
+  "channel": "your_channel_name",
+  "branding": {
+    "gameTitle": "Who's That Character?"
+  },
+  "twitch": {
+    "useAuth": true,
+    "username": "your_bot_account",
+    "oauthToken": "oauth:your_token_here"
+  },
+  "files": {
+    "characterList": "characters.txt",
+    "imageExtension": "png"
+  }
+}
