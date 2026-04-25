@@ -523,15 +523,26 @@ function handleRoundTimeout() {
   if (state.revealed) return;
   state.winner = null;
 
-  const streakCfg = state.config.streak;
-  if (streakCfg && streakCfg.enabled && state.streak.count > 0) {
-    state.streak.holder = null;
-    state.streak.count = 0;
-    updateStreakDisplay();
-    writeStreakFile();
-  }
+  const cfg = state.config;
+  const streakCfg = cfg.streak;
 
-  revealAnswer("timeout");
+  const finishTimeout = (resetStreak) => {
+    if (resetStreak && streakCfg && streakCfg.enabled && state.streak.count > 0) {
+      state.streak.holder = null;
+      state.streak.count = 0;
+      updateStreakDisplay();
+      writeStreakFile();
+    }
+    revealAnswer("timeout");
+  };
+
+  // If pauseWhenNotLive is on and OBS isn't broadcasting, the timeout isn't
+  // the viewer's fault — preserve the streak
+  if (cfg.round.pauseWhenNotLive && streakCfg && streakCfg.enabled && state.streak.count > 0) {
+    checkIsLive(isLive => finishTimeout(isLive));
+  } else {
+    finishTimeout(true);
+  }
 }
 
 function readStreakFile() {
