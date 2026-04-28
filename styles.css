@@ -157,6 +157,17 @@ html, body {
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* Slide-in animations for character image */
+@keyframes slideInLeft  { from { opacity: 0; transform: translateX(-110vw); } to { opacity: 1; transform: none; } }
+@keyframes slideInRight { from { opacity: 0; transform: translateX(110vw);  } to { opacity: 1; transform: none; } }
+@keyframes slideInUp    { from { opacity: 0; transform: translateY(-110vh); } to { opacity: 1; transform: none; } }
+@keyframes slideInDown  { from { opacity: 0; transform: translateY(110vh);  } to { opacity: 1; transform: none; } }
+
+.character-image.slide-in-left  { animation: slideInLeft  var(--slide-duration) ease forwards; }
+.character-image.slide-in-right { animation: slideInRight var(--slide-duration) ease forwards; }
+.character-image.slide-in-up    { animation: slideInUp    var(--slide-duration) ease forwards; }
+.character-image.slide-in-down  { animation: slideInDown  var(--slide-duration) ease forwards; }
+
 /* ---- Error overlay ---- */
 .error-overlay {
   position: fixed;

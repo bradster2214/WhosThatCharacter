@@ -34,11 +34,12 @@ Bring your own images and character list. The app displays a character image as 
 
    Edit `config.local.json` with your Twitch channel, bot credentials, and any settings you want to override.
 
-5. **Start the local server** by double-clicking `start-server.bat`.
+5. **Start the local server.**
 
-   The batch file will show a clear error if Python is not installed. Download it from [python.org](https://www.python.org/downloads/) and make sure to check **"Add Python to PATH"** during installation.
+   - **Windows:** double-click `start-server.bat`. It will show a clear error if Python is not installed — download it from [python.org](https://www.python.org/downloads/) and check **"Add Python to PATH"** during installation.
+   - **Mac / Linux:** run `bash start-server.sh` in a terminal (or `chmod +x start-server.sh` once, then `./start-server.sh`).
 
-   Close the server window to stop it.
+   Close the window / terminal to stop the server.
 
 6. **Add an OBS Browser Source** pointing to:
 
@@ -316,7 +317,7 @@ Text shown on the overlay and posted to chat. Supports `{winner}`, `{character}`
 | Key | Default | Description |
 |-----|---------|-------------|
 | `showConnectionStatus` | `true` | Shows a small indicator in the corner confirming the Twitch connection is active |
-| `showDebugPanel` | `false` | Shows the debug panel with connection info, current character, and recent guesses |
+| `showDebugPanel` | `false` | Shows the debug panel with connection info, current character, recent guesses, and a streak event log |
 | `transparentBackground` | `true` | Transparent background for OBS compositing. Set to `false` for a dark background when testing in a browser |
 | `imageOnly` | `false` | Hides the game title and prompt text, leaving only the character image. Designed for use with slide animations |
 | `slideOutDirection` | `"none"` | Direction the image slides off screen when a round ends (`none`, `left`, `right`, `up`, `down`) |
@@ -370,7 +371,7 @@ This project does not include copyrighted franchise assets, official character a
 
 Add your own local images to `/images` and create your own `characters.txt`. Both are gitignored by default so they won't be committed.
 
-The sample images included in this repository (`images/Blue Wizard.svg`, etc.) are original generic placeholder illustrations created for this project.
+The only image committed to this repository is `images/placeholder.png`, which is shown when a character's image file is missing.
 
 The code in this repository is licensed under MIT. Any images, character names, or other assets you add locally are your responsibility and are not covered by this repository's license.
 

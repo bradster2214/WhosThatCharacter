@@ -45,7 +45,8 @@ const state = {
 
   warnings: [],
   errors: [],
-  recentIrcLines: []
+  recentIrcLines: [],
+  streakLog: []
 };
 
 // ---------------------------------------------------------------------------
@@ -380,7 +381,6 @@ function pickRandomCharacter() {
 }
 
 function startRound() {
-  readStreakFile();
   clearRoundTimers();
 
   const character = pickRandomCharacter();
@@ -475,7 +475,8 @@ function revealAnswer(reason) {
 
   if (state.winner) {
     const streakCfg = state.config.streak;
-    const hasStreak = streakCfg && streakCfg.enabled && state.streak.count >= (streakCfg.announceThreshold ?? 2);
+    const threshold = streakCfg && streakCfg.enabled ? (streakCfg.announceThreshold ?? 2) : Infinity;
+    const hasStreak = state.streak.count >= threshold;
 
     if (hasStreak) {
       const msg = (cfg.branding.winnerStreakText || "{winner} got it! It was {character}! {streak} streak!")
@@ -503,19 +504,7 @@ function handleCorrectGuess(displayName, message) {
   if (state.revealed) return;
   state.winner = displayName;
   state.winningMessage = message;
-
-  const streakCfg = state.config.streak;
-  if (streakCfg && streakCfg.enabled) {
-    if (displayName === state.streak.holder) {
-      state.streak.count++;
-    } else {
-      state.streak.holder = displayName;
-      state.streak.count = 1;
-    }
-    updateStreakDisplay();
-    writeStreakFile();
-  }
-
+  streakOnWin(displayName);
   revealAnswer("correct");
 }
 
@@ -524,66 +513,103 @@ function handleRoundTimeout() {
   state.winner = null;
 
   const cfg = state.config;
-  const streakCfg = cfg.streak;
 
-  const finishTimeout = (resetStreak) => {
-    if (resetStreak && streakCfg && streakCfg.enabled && state.streak.count > 0) {
-      state.streak.holder = null;
-      state.streak.count = 0;
-      updateStreakDisplay();
-      writeStreakFile();
-    }
+  const finish = (resetStreak) => {
+    if (resetStreak) streakOnReset();
     revealAnswer("timeout");
   };
 
   // If pauseWhenNotLive is on and OBS isn't broadcasting, the timeout isn't
   // the viewer's fault — preserve the streak
-  if (cfg.round.pauseWhenNotLive && streakCfg && streakCfg.enabled && state.streak.count > 0) {
-    checkIsLive(isLive => finishTimeout(isLive));
+  if (cfg.round.pauseWhenNotLive && state.streak.count > 0) {
+    checkIsLive(isLive => finish(isLive));
   } else {
-    finishTimeout(true);
+    finish(true);
   }
 }
 
-function readStreakFile() {
-  fetch("/streak.json")
-    .then(r => r.ok ? r.json() : null)
-    .then(data => {
-      if (data && typeof data.streak === "number") {
-        state.streak.holder = data.winner || "";
-        state.streak.count = data.streak || 0;
-        updateStreakDisplay();
-      }
-    })
-    .catch(() => {});
+// ---------------------------------------------------------------------------
+// Streak
+// ---------------------------------------------------------------------------
+
+function streakDebug(msg) {
+  const ts = new Date().toLocaleTimeString();
+  state.streakLog.push(`[${ts}] ${msg}`);
+  state.streakLog = state.streakLog.slice(-10);
+  updateDebugPanel();
 }
 
-function writeStreakFile() {
-  const data = {
-    winner: state.streak.holder || "",
-    streak: state.streak.count || 0
-  };
+async function streakLoad() {
+  try {
+    const r = await fetch("/streak.json", { cache: "no-store" });
+    if (!r.ok) {
+      streakDebug(`load: file not found (${r.status}), starting at 0`);
+      return;
+    }
+    const data = await r.json();
+    if (typeof data.streak === "number" && data.streak > 0) {
+      state.streak.holder = data.winner || null;
+      state.streak.count  = data.streak;
+      streakDebug(`load: ${state.streak.holder} x${state.streak.count}`);
+    } else {
+      streakDebug(`load: file exists but streak is 0`);
+    }
+  } catch (e) {
+    streakDebug(`load error: ${e.message}`);
+  }
+}
+
+function streakSave() {
+  const payload = { winner: state.streak.holder || "", streak: state.streak.count };
+  streakDebug(`save: ${JSON.stringify(payload)}`);
   fetch("/write-streak", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data)
-  }).catch(() => {});
+    body: JSON.stringify(payload)
+  }).catch(e => streakDebug(`save failed: ${e.message}`));
 }
 
-function updateStreakDisplay() {
-  const streakCfg = state.config.streak;
-  const el = document.getElementById("streakDisplay");
+function streakOnWin(displayName) {
+  const cfg = state.config.streak;
+  if (!cfg || !cfg.enabled) {
+    streakDebug(`win ignored: streak disabled`);
+    return;
+  }
+  const before = state.streak.count;
+  if (displayName === state.streak.holder) {
+    state.streak.count++;
+    streakDebug(`win: ${displayName} continued streak ${before} → ${state.streak.count}`);
+  } else {
+    streakDebug(`win: ${displayName} broke ${state.streak.holder}'s streak, reset to 1`);
+    state.streak.holder = displayName;
+    state.streak.count  = 1;
+  }
+  streakSave();
+  streakRender();
+}
+
+function streakOnReset() {
+  const cfg = state.config.streak;
+  if (!cfg || !cfg.enabled || state.streak.count === 0) return;
+  streakDebug(`reset: ${state.streak.holder} x${state.streak.count} → 0`);
+  state.streak.holder = null;
+  state.streak.count  = 0;
+  streakSave();
+  streakRender();
+}
+
+function streakRender() {
+  const cfg   = state.config.streak;
+  const el    = document.getElementById("streakDisplay");
   const textEl = document.getElementById("streakText");
   if (!el || !textEl) return;
 
-  if (!streakCfg || !streakCfg.enabled || state.streak.count < 2 || (state.config.display && state.config.display.imageOnly)) {
-    el.classList.add("hidden");
-    return;
-  }
+  const imageOnly = state.config.display && state.config.display.imageOnly;
+  const show = cfg && cfg.enabled && state.streak.count >= 2 && !imageOnly;
+  if (!show) { el.classList.add("hidden"); return; }
 
-  const template = streakCfg.overlayTemplate || "{winner} x{streak}";
-  textEl.textContent = template
-    .replace("{winner}", state.streak.holder)
+  textEl.textContent = (cfg.overlayTemplate || "{winner} x{streak}")
+    .replace("{winner}", state.streak.holder || "")
     .replace("{streak}", state.streak.count);
   el.classList.remove("hidden");
 }
@@ -599,14 +625,13 @@ function getSlideTransform(direction) {
 function applySlideIn(img) {
   const display = state.config.display || {};
   const dir = display.slideInDirection;
+  img.classList.remove("loading");
   if (dir && dir !== "none") {
-    // Set starting position while .loading has transition:none, then animate to center
-    img.style.transform = getSlideTransform(dir);
-    void img.offsetHeight; // force reflow so browser registers the starting position
-    img.classList.remove("loading");
-    img.style.transform = "";
-  } else {
-    img.classList.remove("loading");
+    void img.offsetHeight; // force reflow so browser commits the "before" state
+    const cls = `slide-in-${dir}`;
+    img.classList.add(cls);
+    const durationMs = (display.slideDurationSeconds ?? 0.5) * 1000;
+    setTimeout(() => img.classList.remove(cls), durationMs + 50);
   }
 }
 
@@ -1068,6 +1093,11 @@ function updateDebugPanel() {
     `Streak     : ${state.streak.holder ? `${state.streak.holder} x${state.streak.count}` : "—"}`
   ];
 
+  if (state.streakLog.length > 0) {
+    lines.push(``, `STREAK LOG:`);
+    for (const l of state.streakLog) lines.push(`  ${l}`);
+  }
+
   if (state.recentIrcLines.length > 0) {
     lines.push(``, `RECENT IRC:`);
     for (const l of state.recentIrcLines) lines.push(`  ${l.slice(0, 120)}`);
@@ -1214,6 +1244,9 @@ async function main() {
       if (state.config.round.autoStart) startRoundWhenReady();
     }
   });
+
+  // Restore streak from disk — awaited so the round never starts with stale state
+  await streakLoad();
 
   // Connect to Twitch
   connectTwitchChat();
