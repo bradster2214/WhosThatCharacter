@@ -8,7 +8,7 @@ Bring your own images and character list. The app displays a character image as 
 
 ## Screenshot
 
-*(Add your own screenshot here once the overlay is running.)*
+<img width="700" height="700" alt="WhosThatCharacter" src="https://github.com/user-attachments/assets/5210f0f6-fefb-445c-8689-710f8465a6a9" />
 
 ---
 
