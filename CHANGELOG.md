@@ -4,6 +4,13 @@ All notable changes to this project will be documented here.
 
 ---
 
+## [1.5.1] — 2026-06-05
+
+### Fixed
+- Regex aliases now participate in the same longest-match-wins pool as literal aliases — a more specific regex (e.g. Alt Agnes Tachyon matching `"alt apple tart"` at 14 chars) correctly beats a less specific one (Agnes Tachyon matching `"apple tart"` at 10 chars)
+
+---
+
 ## [1.5.0] — 2026-06-05
 
 ### Added

@@ -294,10 +294,13 @@ async function loadCharacterList() {
 // ---------------------------------------------------------------------------
 
 // Scan all characters and return which ones match the guess, split by match type.
+// Both literal (contains) and regex matches are pooled together and filtered by
+// longest match length, so a more specific match always beats a less specific one:
+//   "alt apple tart" → Alt Agnes regex matches 14 chars, Agnes regex matches 10 → Alt Agnes wins
+//   "oh valentine taiki shuttle" → "valentine taiki shuttle" (23) beats "taiki shuttle" (13)
 function findMatchingCharacters(guess) {
-  const exact = [];
-  const regex = [];
-  const containsCandidates = []; // { char, matchLen }
+  const exact      = [];
+  const candidates = []; // { char, matchLen } — covers both contains and regex
 
   for (const char of state.characters) {
     const isExact = char.normalizedAliases.some(a => a === guess);
@@ -306,31 +309,38 @@ function findMatchingCharacters(guess) {
       continue;
     }
 
-    // Find the longest alias that appears anywhere in the guess as complete words.
-    // Using the longest match resolves cases like "oh valentine taiki shuttle" where
-    // both "valentine taiki shuttle" (len 23) and "taiki shuttle" (len 13) are contained —
-    // the longer alias wins and the guess is accepted unambiguously.
     let bestLen = 0;
+
+    // Literal aliases: longest that appears as complete words in the guess
     for (const a of char.normalizedAliases) {
       if (a.length > bestLen && containsAsWords(guess, a)) {
         bestLen = a.length;
       }
     }
-    if (bestLen > 0) containsCandidates.push({ char, matchLen: bestLen });
 
-    if (char.regexAliases.some(rx => rx.test(guess))) regex.push(char);
+    // Regex aliases: use the actual matched substring length so more specific
+    // patterns (e.g. "alt [A-word] [T-word]") beat less specific ones ("[A-word] [T-word]")
+    for (const rx of char.regexAliases) {
+      rx.lastIndex = 0;
+      const m = rx.exec(guess);
+      if (m && m[0].length > bestLen) {
+        bestLen = m[0].length;
+      }
+    }
+
+    if (bestLen > 0) candidates.push({ char, matchLen: bestLen });
   }
 
-  // Only keep contains matches that share the longest match length.
+  // Only keep candidates that share the longest match length
   const contains = [];
-  if (containsCandidates.length > 0) {
-    const maxLen = Math.max(...containsCandidates.map(x => x.matchLen));
-    for (const { char, matchLen } of containsCandidates) {
+  if (candidates.length > 0) {
+    const maxLen = Math.max(...candidates.map(x => x.matchLen));
+    for (const { char, matchLen } of candidates) {
       if (matchLen === maxLen) contains.push(char);
     }
   }
 
-  return { exact, contains, regex };
+  return { exact, contains, regex: [] };
 }
 
 // Returns true if needle appears in haystack as a complete word sequence —
