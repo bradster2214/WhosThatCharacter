@@ -397,6 +397,21 @@ Appends a calculated amount to the end of every win message posted to chat, e.g.
 | `formula` | `"1000+(streak*100)"` | Expression used to calculate the amount. The variable `streak` is the current streak count. Supports `+`, `-`, `*`, `/`, and parentheses |
 | `currencyTemplate` | `"+{currency}"` | Controls how the amount appears in the chat message. `{currency}` is replaced with the calculated value. Examples: `"(+{currency})"` → `(+1200)`, `"+{currency} pts"` → `+1200 pts` |
 
+#### Firebot integration
+
+If you use [Firebot](https://firebot.app), you can automatically award currency to the viewer when they win. Set up a chat trigger with the following conditions:
+
+- **From:** your bot account username
+- **Message contains:** a phrase that only appears in your win messages — use something from your `winnerText` setting, e.g. `got it!` (default) or whatever you've customised it to
+
+Then add an **Add Currency** effect and use this as the amount:
+
+```
+$objectWalkPath[$regexExec[$chatMessage, \d+(?=\D*$)], 0]
+```
+
+This extracts the last number from the win message — the calculated currency amount — regardless of how you've formatted `currencyTemplate`.
+
 ### `controls`
 
 | Key | Default | Description |
