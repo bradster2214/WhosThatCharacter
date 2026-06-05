@@ -1,0 +1,38 @@
+{
+  // Firebot currency integration.
+  // Win messages include a calculated currency amount that Firebot can extract and award.
+  //
+  // Firebot setup:
+  //   Trigger: Chat message from your bot account containing a phrase from your winnerText
+  //   Effect:  Add Currency — amount: $objectWalkPath[$regexExec[$chatMessage, \d+(?=\D*$)], 0]
+  //
+  // The formula below awards 1000 base + 100 per streak level.
+  // The output looks like: "bradster2214 got it! It was Gold Ship! (+1200)"
+  // Firebot's regex extracts the number (1200) from wherever it appears in the message.
+
+  "channel": "your_channel_name",
+
+  "twitch": {
+    "useAuth": true,
+    "username": "your_bot_account",
+    "oauthToken": "oauth:your_token_here"
+  },
+
+  "round": {
+    // Prevent ghost picks when hiding the source immediately after a win
+    "autoStartAfterWin": false
+  },
+
+  "streak": {
+    "enabled": true,
+    "announceThreshold": 2
+  },
+
+  "currency": {
+    "enabled": true,
+    // Base reward of 1000, +100 for each level of the current streak
+    "formula": "1000+(streak*100)",
+    // Wrapping in brackets makes it easy to visually separate from the rest of the message
+    "currencyTemplate": "(+{currency})"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  // Minimal setup — fill in your channel and credentials, everything else uses defaults.
+  // Copy this to config.local.json to get started.
+
+  "channel": "your_channel_name",
+
+  "twitch": {
+    "useAuth": true,
+    "username": "your_bot_account",
+    // Generate a token at twitchtokengenerator.com — needs chat:read and chat:write scopes
+    "oauthToken": "oauth:your_token_here"
+  }
+}

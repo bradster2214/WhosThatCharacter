@@ -356,6 +356,15 @@ All settings live in `config.json`. Override any value by adding it to `config.l
 
 Copy `config.local.template.json` as a starting point — it includes all settings with comments explaining each one.
 
+The `examples/` folder contains ready-made presets for common setups:
+
+| File | Use case |
+|------|----------|
+| `basic-config.local.json` | Minimal setup — just channel and credentials |
+| `image-only-slide-config.local.json` | Image-only mode with slide animations |
+| `manual-rounds-config.local.json` | No auto-start, keyboard-controlled rounds |
+| `firebot-currency-config.local.json` | Currency rewards wired up for Firebot |
+
 ### `branding`
 
 Text shown on the overlay and posted to chat. Supports `{winner}`, `{character}`, and `{streak}` placeholders.
@@ -476,4 +485,4 @@ The code in this repository is licensed under MIT. Any images, character names, 
 
 ## License
 
-MIT — see `LICENCE.txt`.
+MIT — see `LICENSE.txt`.

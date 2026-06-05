@@ -1,0 +1,21 @@
+{
+  // Image-only mode with slide animations.
+  // Hides the game title and prompt text — only the silhouette is shown.
+  // The image slides out to the left when a round ends and slides in from the left at the start.
+  // Pair with a separate chat overlay for the prompt text if needed.
+
+  "channel": "your_channel_name",
+
+  "twitch": {
+    "useAuth": true,
+    "username": "your_bot_account",
+    "oauthToken": "oauth:your_token_here"
+  },
+
+  "display": {
+    "imageOnly": true,
+    "slideOutDirection": "left",
+    "slideInDirection": "left",
+    "slideDurationSeconds": 0.5
+  }
+}

@@ -1,0 +1,25 @@
+{
+  // Manual round control — rounds don't start or advance automatically.
+  // Use keyboard shortcuts to drive the game at your own pace:
+  //   N        — start next round
+  //   R        — reveal the answer early
+  //   Space    — reveal (if round active) / next round (if revealed)
+  //   P        — force a specific character by name
+
+  "channel": "your_channel_name",
+
+  "twitch": {
+    "useAuth": true,
+    "username": "your_bot_account",
+    "oauthToken": "oauth:your_token_here"
+  },
+
+  "round": {
+    // Don't start a round automatically on load
+    "autoStart": false,
+    // No timer — round runs until someone guesses correctly or you reveal manually
+    "roundDurationSeconds": 0,
+    // Don't auto-start the next round after a correct guess
+    "autoStartAfterWin": false
+  }
+}

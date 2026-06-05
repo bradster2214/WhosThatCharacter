@@ -4,6 +4,17 @@ All notable changes to this project will be documented here.
 
 ---
 
+## [1.8.0] — 2026-06-06
+
+### Added
+- `examples/` folder with four ready-made config presets: `basic`, `image-only-slide`, `manual-rounds`, and `firebot-currency`
+- README configuration reference now includes a presets table
+
+### Changed
+- `LICENCE.txt` renamed to `LICENSE.txt` for compatibility with standard tooling
+
+---
+
 ## [1.7.0] — 2026-06-05
 
 ### Added
