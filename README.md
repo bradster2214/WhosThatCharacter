@@ -14,6 +14,19 @@ Bring your own images and list — characters, Pokémon, logos, cars, anything. 
 
 ---
 
+## Streamer Setup Checklist
+
+- [ ] Create a Twitch bot account (or use your main account)
+- [ ] Generate an OAuth token at [twitchtokengenerator.com](https://twitchtokengenerator.com) with `chat:read` and `chat:write` scopes
+- [ ] Copy `config.local.template.json` → `config.local.json` and fill in your channel name, bot username, and token
+- [ ] Add your images to the `/images` folder (filename must match the character name exactly, e.g. `Gold Ship.png`)
+- [ ] Add your character list to `characters.txt` (copy `characters.example.txt` as a starting point)
+- [ ] Start the server (`start-server.bat` on Windows, `bash start-server.sh` on Mac/Linux)
+- [ ] Add an OBS browser source pointing to `http://127.0.0.1:8787/index.html`
+- [ ] Test with `http://127.0.0.1:8787/index.html?debug=1` to confirm everything is connected
+
+---
+
 ## Screenshot
 
 <img width="700" height="700" alt="WhosThatCharacter" src="https://github.com/user-attachments/assets/5210f0f6-fefb-445c-8689-710f8465a6a9" />
@@ -74,6 +87,8 @@ Bring your own images and list — characters, Pokémon, logos, cars, anything. 
 ## Twitch Authentication
 
 You need a Twitch user access token with **`chat:read`** and **`chat:write`** scopes. `chat:write` is required because the game posts results and streak announcements to chat.
+
+> **Never commit your OAuth token.** Credentials go in `config.local.json`, which is gitignored by default. If you accidentally commit a token, revoke it immediately at [twitchapps.com/tmi](https://twitchapps.com/tmi) or via your Twitch security settings and generate a new one.
 
 1. Create a dedicated bot account on Twitch (or use your main account).
 2. Generate a token at [twitchtokengenerator.com](https://twitchtokengenerator.com) — select a **Custom Scope Token** and tick `chat:read` and `chat:write`.
@@ -302,6 +317,25 @@ http://127.0.0.1:8787/index.html?debug=1
   "showDebugPanel": true
 }
 ```
+
+---
+
+## Validator
+
+Before going live, open the validator to check your setup for common problems:
+
+```
+http://127.0.0.1:8787/validator.html
+```
+
+It checks:
+
+- **Missing images** — characters in your list with no matching image file
+- **Orphaned images** — image files in `/images` with no matching character entry
+- **Duplicate aliases** — the same alias shared by two or more characters (causes ambiguous guesses)
+- **Invalid regex aliases** — regex entries that fail to compile and will silently never match
+
+The validator reads your live config and character list, so it always reflects your current setup. Hit **Re-run checks** after making changes.
 
 ---
 

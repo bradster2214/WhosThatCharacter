@@ -4,6 +4,19 @@ All notable changes to this project will be documented here.
 
 ---
 
+## [1.7.0] — 2026-06-05
+
+### Added
+- **Validator** — new `validator.html` page (served at `http://127.0.0.1:8787/validator.html`) that checks your setup before going live:
+  - Missing images — characters in the list with no matching image file
+  - Orphaned images — image files with no matching character entry
+  - Duplicate canonical names and aliases
+  - Invalid regex aliases that fail to compile
+- New `GET /list-images` endpoint in `server.py` to support the orphaned image check
+- Validator URL now printed in the server startup output
+
+---
+
 ## [1.6.0] — 2026-06-05
 
 ### Added
