@@ -28,7 +28,8 @@
     "avoidImmediateRepeats": true,
     "recentHistorySize": 10,
     "pauseWhenNotLive": false,
-    "goLiveDelaySeconds": 0
+    "goLiveDelaySeconds": 0,
+    "autoStartAfterWin": true
   },
   "display": {
     "showDebugPanel": false,
@@ -51,5 +52,10 @@
   },
   "persistence": {
     "enabled": true
+  },
+  "currency": {
+    "enabled": false,
+    "formula": "1000+(streak*100)",
+    "prefix": "+"
   }
 }

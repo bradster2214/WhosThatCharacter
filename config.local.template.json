@@ -82,7 +82,13 @@
     "pauseWhenNotLive": false,
     // How many seconds to wait after going live before the first round starts
     // Gives you time to get settled before the game begins. 0 = start immediately
-    "goLiveDelaySeconds": 0
+    "goLiveDelaySeconds": 0,
+    // When true (default), the next round starts automatically after a correct guess.
+    // Set to false if you hide the OBS source immediately after each win — otherwise
+    // the reveal timers can fire during the unload window, picking a ghost character
+    // that gets saved to streak.json before the page closes.
+    // Timeouts (no winner) always continue automatically regardless of this setting.
+    "autoStartAfterWin": true
   },
 
   "controls": {
@@ -109,5 +115,16 @@
     //   - streak: the current streak holder and count (if streak.enabled is also true)
     // Set to false to run entirely in-memory — all history resets on every reload
     "enabled": true
+  },
+
+  "currency": {
+    // Set to true to append a currency amount to the end of every win message
+    // e.g. "bradster2214 guessed the Umamusume! It was Gold Ship! +1200"
+    "enabled": false,
+    // Formula used to calculate the amount — 'streak' is the current streak count
+    // Examples: "1000", "1000+(streak*100)", "500*streak"
+    "formula": "1000+(streak*100)",
+    // String prepended to the calculated amount (default "+")
+    "prefix": "+"
   }
 }

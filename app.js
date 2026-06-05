@@ -503,6 +503,22 @@ function loadCharacterImage(character) {
   img.src = character.imagePath;
 }
 
+function computeCurrency() {
+  const cfg = state.config.currency;
+  if (!cfg || !cfg.enabled || !cfg.formula) return "";
+  const expr = String(cfg.formula).replace(/\bstreak\b/g, String(state.streak.count));
+  // Only allow digits, whitespace, and basic arithmetic operators
+  if (!/^[\d\s+\-*/.()]+$/.test(expr)) return "";
+  try {
+    const result = Math.floor(new Function("return " + expr)());
+    if (!isFinite(result)) return "";
+    const prefix = cfg.prefix != null ? String(cfg.prefix) : "+";
+    return prefix + result;
+  } catch (_) {
+    return "";
+  }
+}
+
 function revealAnswer(reason) {
   if (state.revealed) return;
   state.revealed = true;
@@ -520,17 +536,20 @@ function revealAnswer(reason) {
     const streakCfg = state.config.streak;
     const threshold = streakCfg && streakCfg.enabled ? (streakCfg.announceThreshold ?? 2) : Infinity;
     const hasStreak = state.streak.count >= threshold;
+    const currency  = computeCurrency();
 
     if (hasStreak) {
-      const msg = (cfg.branding.winnerStreakText || "{winner} got it! It was {character}! {streak} streak!")
+      let msg = (cfg.branding.winnerStreakText || "{winner} got it! It was {character}! {streak} streak!")
         .replace("{winner}", state.winner)
         .replace("{character}", character.canonicalName)
         .replace("{streak}", state.streak.count);
+      if (currency) msg += " " + currency;
       sendChatMessage(msg);
     } else {
-      const msg = (cfg.branding.winnerText || "{winner} got it! It was {character}!")
+      let msg = (cfg.branding.winnerText || "{winner} got it! It was {character}!")
         .replace("{winner}", state.winner)
         .replace("{character}", character.canonicalName);
+      if (currency) msg += " " + currency;
       sendChatMessage(msg);
     }
   } else {
@@ -539,7 +558,14 @@ function revealAnswer(reason) {
     sendChatMessage(msg);
   }
 
-  scheduleNextRound();
+  // If autoStartAfterWin is false, don't schedule the next round after a correct guess.
+  // This prevents a ghost pick being added to history when the OBS source is shut down
+  // immediately after a win (the timers could fire during the unload window).
+  // Timeouts (no winner) always continue automatically.
+  const suppressAutoStart = state.winner && state.config.round.autoStartAfterWin === false;
+  if (!suppressAutoStart) {
+    scheduleNextRound();
+  }
   updateDebugPanel();
 }
 

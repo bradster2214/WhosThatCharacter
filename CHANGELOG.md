@@ -4,6 +4,14 @@ All notable changes to this project will be documented here.
 
 ---
 
+## [1.6.0] — 2026-06-05
+
+### Added
+- **Currency feature** — a calculated amount can be appended to every win message posted to chat (e.g. `+1200`). Controlled by a new `currency` config section with `enabled`, `formula`, and `prefix` fields. The formula supports a `streak` variable so the reward can scale with the current streak count
+- `autoStartAfterWin` config flag (default `true`) — when set to `false`, the next round is not scheduled after a correct guess. Fixes a ghost-pick issue where the reveal timers fire during the OBS source unload window (caused by "Shutdown source when not visible"), adding a character to `recentPicks` and `streak.json` before the page fully closes. Timeouts always continue automatically regardless of this setting
+
+---
+
 ## [1.5.1] — 2026-06-05
 
 ### Fixed
