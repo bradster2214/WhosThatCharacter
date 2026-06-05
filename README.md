@@ -395,7 +395,7 @@ Appends a calculated amount to the end of every win message posted to chat, e.g.
 |-----|---------|-------------|
 | `enabled` | `false` | When `true`, a currency amount is appended to every win message |
 | `formula` | `"1000+(streak*100)"` | Expression used to calculate the amount. The variable `streak` is the current streak count. Supports `+`, `-`, `*`, `/`, and parentheses |
-| `prefix` | `"+"` | String prepended to the calculated amount in the chat message |
+| `currencyTemplate` | `"+{currency}"` | Controls how the amount appears in the chat message. `{currency}` is replaced with the calculated value. Examples: `"(+{currency})"` → `(+1200)`, `"+{currency} pts"` → `+1200 pts` |
 
 ### `controls`
 

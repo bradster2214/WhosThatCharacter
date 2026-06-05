@@ -512,8 +512,8 @@ function computeCurrency() {
   try {
     const result = Math.floor(new Function("return " + expr)());
     if (!isFinite(result)) return "";
-    const prefix = cfg.prefix != null ? String(cfg.prefix) : "+";
-    return prefix + result;
+    const template = cfg.currencyTemplate != null ? String(cfg.currencyTemplate) : "+{currency}";
+    return template.replace("{currency}", result);
   } catch (_) {
     return "";
   }

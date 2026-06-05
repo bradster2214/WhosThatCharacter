@@ -56,6 +56,6 @@
   "currency": {
     "enabled": false,
     "formula": "1000+(streak*100)",
-    "prefix": "+"
+    "currencyTemplate": "+{currency}"
   }
 }

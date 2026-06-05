@@ -124,7 +124,8 @@
     // Formula used to calculate the amount — 'streak' is the current streak count
     // Examples: "1000", "1000+(streak*100)", "500*streak"
     "formula": "1000+(streak*100)",
-    // String prepended to the calculated amount (default "+")
-    "prefix": "+"
+    // How the amount is formatted in the chat message — {currency} is replaced with the calculated value
+    // Examples: "+{currency}" → "+1200",  "(+{currency})" → "(+1200)",  "+{currency} pts" → "+1200 pts"
+    "currencyTemplate": "+{currency}"
   }
 }
