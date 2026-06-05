@@ -1,8 +1,16 @@
 # Who's That Character?
 
-A configurable Twitch/OBS browser-source guessing game where viewers identify silhouetted characters from chat.
+A configurable Twitch/OBS browser-source guessing game where viewers identify silhouetted images from chat.
 
-Bring your own images and character list. The app displays a character image as a solid black silhouette, listens to Twitch chat for guesses, and reveals the answer when someone gets it right. Win messages and streak announcements are posted to chat automatically.
+Bring your own images and list — characters, Pokémon, logos, cars, anything. The app displays an image as a solid black silhouette, listens to Twitch chat for guesses, and reveals the answer when someone gets it right. Win messages and streak announcements are posted to chat automatically.
+
+**Features at a glance:**
+- Works with any image set — not tied to any specific franchise or game
+- Alias system with regex support for flexible guessing
+- Streak tracking with configurable chat announcements
+- Currency rewards per win with a customisable formula
+- Slide animations, image-only mode, repeat avoidance, and more
+- State persists across OBS source reloads
 
 ---
 
