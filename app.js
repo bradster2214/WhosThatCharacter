@@ -46,7 +46,7 @@ const state = {
   warnings: [],
   errors: [],
   recentIrcLines: [],
-  streakLog: []
+  persistenceLog: []
 };
 
 // ---------------------------------------------------------------------------
@@ -145,7 +145,8 @@ function normalizeGuess(text) {
     .replace(/['']/g, "")
     .replace(/[-_]/g, " ")
     .replace(/[^\p{L}\p{N}\s]/gu, "")
-    .replace(/\s+/g, " ");
+    .replace(/\s+/g, " ")
+    .trim(); // trim again — punctuation removal can leave trailing/leading spaces
 }
 
 function parseRegexAlias(str) {
@@ -295,8 +296,8 @@ async function loadCharacterList() {
 // Scan all characters and return which ones match the guess, split by match type.
 function findMatchingCharacters(guess) {
   const exact = [];
-  const contains = [];
   const regex = [];
+  const containsCandidates = []; // { char, matchLen }
 
   for (const char of state.characters) {
     const isExact = char.normalizedAliases.some(a => a === guess);
@@ -304,13 +305,43 @@ function findMatchingCharacters(guess) {
       exact.push(char);
       continue;
     }
-    const isContains = char.normalizedAliases.some(a => guess.includes(a));
-    if (isContains) contains.push(char);
+
+    // Find the longest alias that appears anywhere in the guess as complete words.
+    // Using the longest match resolves cases like "oh valentine taiki shuttle" where
+    // both "valentine taiki shuttle" (len 23) and "taiki shuttle" (len 13) are contained —
+    // the longer alias wins and the guess is accepted unambiguously.
+    let bestLen = 0;
+    for (const a of char.normalizedAliases) {
+      if (a.length > bestLen && containsAsWords(guess, a)) {
+        bestLen = a.length;
+      }
+    }
+    if (bestLen > 0) containsCandidates.push({ char, matchLen: bestLen });
 
     if (char.regexAliases.some(rx => rx.test(guess))) regex.push(char);
   }
 
+  // Only keep contains matches that share the longest match length.
+  const contains = [];
+  if (containsCandidates.length > 0) {
+    const maxLen = Math.max(...containsCandidates.map(x => x.matchLen));
+    for (const { char, matchLen } of containsCandidates) {
+      if (matchLen === maxLen) contains.push(char);
+    }
+  }
+
   return { exact, contains, regex };
+}
+
+// Returns true if needle appears in haystack as a complete word sequence —
+// i.e. bounded by start/end of string or spaces on both sides.
+// This prevents a short alias like "taiki shuttle" matching mid-word inside a longer alias.
+function containsAsWords(haystack, needle) {
+  const idx = haystack.indexOf(needle);
+  if (idx === -1) return false;
+  const pre  = idx === 0 || haystack[idx - 1] === " ";
+  const post = idx + needle.length === haystack.length || haystack[idx + needle.length] === " ";
+  return pre && post;
 }
 
 function checkGuess(message) {
@@ -376,6 +407,8 @@ function pickRandomCharacter() {
 
   state.recentPicks.push(picked.canonicalName);
   state.recentPicks = state.recentPicks.slice(-state.config.round.recentHistorySize);
+
+  persistenceSave();
 
   return picked;
 }
@@ -529,72 +562,97 @@ function handleRoundTimeout() {
 }
 
 // ---------------------------------------------------------------------------
-// Streak
+// Persistence & Streak
 // ---------------------------------------------------------------------------
 
-function streakDebug(msg) {
+function persistenceDebug(msg) {
   const ts = new Date().toLocaleTimeString();
-  state.streakLog.push(`[${ts}] ${msg}`);
-  state.streakLog = state.streakLog.slice(-10);
+  state.persistenceLog.push(`[${ts}] ${msg}`);
+  state.persistenceLog = state.persistenceLog.slice(-10);
   updateDebugPanel();
 }
 
-async function streakLoad() {
+async function persistenceLoad() {
+  const persistCfg = state.config.persistence;
+  if (!persistCfg || !persistCfg.enabled) {
+    persistenceDebug("persistence disabled — skipping load");
+    return;
+  }
+
   try {
     const r = await fetch("/streak.json", { cache: "no-store" });
     if (!r.ok) {
-      streakDebug(`load: file not found (${r.status}), starting at 0`);
+      persistenceDebug(`load: file not found (${r.status}), starting fresh`);
       return;
     }
     const data = await r.json();
-    if (typeof data.streak === "number" && data.streak > 0) {
-      state.streak.holder = data.winner || null;
-      state.streak.count  = data.streak;
-      streakDebug(`load: ${state.streak.holder} x${state.streak.count}`);
-    } else {
-      streakDebug(`load: file exists but streak is 0`);
+
+    // Restore recent picks (always, when persistence is on)
+    if (Array.isArray(data.recentPicks) && data.recentPicks.length > 0) {
+      const limit = state.config.round.recentHistorySize || 10;
+      state.recentPicks = data.recentPicks.slice(-limit);
+      persistenceDebug(`load: recentPicks (${state.recentPicks.length}) restored`);
+    }
+
+    // Restore streak only if the streak feature is also enabled
+    const streakCfg = state.config.streak;
+    if (streakCfg && streakCfg.enabled) {
+      if (typeof data.streak === "number" && data.streak > 0) {
+        state.streak.holder = data.winner || null;
+        state.streak.count  = data.streak;
+        persistenceDebug(`load: streak ${state.streak.holder} x${state.streak.count}`);
+      } else {
+        persistenceDebug("load: streak is 0");
+      }
     }
   } catch (e) {
-    streakDebug(`load error: ${e.message}`);
+    persistenceDebug(`load error: ${e.message}`);
   }
 }
 
-function streakSave() {
-  const payload = { winner: state.streak.holder || "", streak: state.streak.count };
-  streakDebug(`save: ${JSON.stringify(payload)}`);
+function persistenceSave() {
+  const persistCfg = state.config.persistence;
+  if (!persistCfg || !persistCfg.enabled) return;
+
+  const payload = {
+    recentPicks: state.recentPicks,
+    winner: state.streak.holder || "",
+    streak: state.streak.count
+  };
+  persistenceDebug(`save: streak=${payload.streak}, picks=${payload.recentPicks.length}`);
   fetch("/write-streak", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload)
-  }).catch(e => streakDebug(`save failed: ${e.message}`));
+  }).catch(e => persistenceDebug(`save failed: ${e.message}`));
 }
 
 function streakOnWin(displayName) {
   const cfg = state.config.streak;
   if (!cfg || !cfg.enabled) {
-    streakDebug(`win ignored: streak disabled`);
+    persistenceDebug("win: streak disabled, skipping");
     return;
   }
   const before = state.streak.count;
   if (displayName === state.streak.holder) {
     state.streak.count++;
-    streakDebug(`win: ${displayName} continued streak ${before} → ${state.streak.count}`);
+    persistenceDebug(`win: ${displayName} continued streak ${before} → ${state.streak.count}`);
   } else {
-    streakDebug(`win: ${displayName} broke ${state.streak.holder}'s streak, reset to 1`);
+    persistenceDebug(`win: ${displayName} broke ${state.streak.holder}'s streak, reset to 1`);
     state.streak.holder = displayName;
     state.streak.count  = 1;
   }
-  streakSave();
+  persistenceSave();
   streakRender();
 }
 
 function streakOnReset() {
   const cfg = state.config.streak;
   if (!cfg || !cfg.enabled || state.streak.count === 0) return;
-  streakDebug(`reset: ${state.streak.holder} x${state.streak.count} → 0`);
+  persistenceDebug(`reset: ${state.streak.holder} x${state.streak.count} → 0`);
   state.streak.holder = null;
   state.streak.count  = 0;
-  streakSave();
+  persistenceSave();
   streakRender();
 }
 
@@ -1093,9 +1151,9 @@ function updateDebugPanel() {
     `Streak     : ${state.streak.holder ? `${state.streak.holder} x${state.streak.count}` : "—"}`
   ];
 
-  if (state.streakLog.length > 0) {
-    lines.push(``, `STREAK LOG:`);
-    for (const l of state.streakLog) lines.push(`  ${l}`);
+  if (state.persistenceLog.length > 0) {
+    lines.push(``, `PERSISTENCE LOG:`);
+    for (const l of state.persistenceLog) lines.push(`  ${l}`);
   }
 
   if (state.recentIrcLines.length > 0) {
@@ -1245,8 +1303,8 @@ async function main() {
     }
   });
 
-  // Restore streak from disk — awaited so the round never starts with stale state
-  await streakLoad();
+  // Restore persisted state from disk — awaited so the round never starts with stale state
+  await persistenceLoad();
 
   // Connect to Twitch
   connectTwitchChat();

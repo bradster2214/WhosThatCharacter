@@ -92,6 +92,7 @@
 
   "streak": {
     // Set to false to disable streak tracking entirely
+    // Requires persistence.enabled to be true — streak state won't survive restarts otherwise
     "enabled": true,
     // How many consecutive correct answers before the streak appears in the win message
     // e.g. 2 means it shows from the second correct answer onward
@@ -99,5 +100,14 @@
     // Text shown on the overlay while a streak is active (hidden if count < 2)
     // {winner} = display name, {streak} = count
     "overlayTemplate": "{winner} x{streak}"
+  },
+
+  "persistence": {
+    // Master switch for saving and restoring state across restarts (source hide/show, OBS close, etc.)
+    // When enabled, the following are written to streak.json after each round:
+    //   - recentPicks: the last N characters shown (prevents repeats surviving restarts)
+    //   - streak: the current streak holder and count (if streak.enabled is also true)
+    // Set to false to run entirely in-memory — all history resets on every reload
+    "enabled": true
   }
 }

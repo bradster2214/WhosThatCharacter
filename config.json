@@ -48,5 +48,8 @@
     "enabled": true,
     "announceThreshold": 2,
     "overlayTemplate": "{winner} x{streak}"
+  },
+  "persistence": {
+    "enabled": true
   }
 }

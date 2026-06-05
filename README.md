@@ -14,7 +14,11 @@ Bring your own images and character list. The app displays a character image as 
 
 ## Quick Start
 
-1. **Clone the repo.**
+1. **Get the files.** Choose whichever method suits you:
+
+   - **Download ZIP** *(easiest)* — click the green **Code** button on GitHub and choose **Download ZIP**. Unzip it anywhere on your computer.
+   - **GitHub Releases** — go to the [Releases](../../releases) page and download the latest release ZIP. Recommended if you want a stable, versioned copy.
+   - **Clone the repo** *(for developers)* — run `git clone` as usual. Makes it easy to pull future updates with `git pull`.
 
 2. **Copy the example character list:**
 
@@ -118,8 +122,8 @@ All chat messages are normalized before matching:
 
 **Matching rules:**
 
-1. **Exact match** — if the normalized message exactly equals an alias, it always wins regardless of other characters.
-2. **Contains match** — if the message contains an alias anywhere (e.g. `"I think this is Blue Wizard"`), it matches — but only if no other character also matches. Ambiguous guesses are rejected.
+1. **Exact match** — if the normalized message exactly equals an alias, it always wins regardless of other characters. This covers the common case of typing a name with trailing punctuation (e.g. `"Blue Wizard?"` normalizes to `"blue wizard"` and matches exactly).
+2. **Contains match** — if the message contains an alias as complete words (e.g. `"I think this is Blue Wizard"`), it matches. When multiple characters match via contains, the one with the **longest** matching alias wins — so `"Oh Valentine Taiki Shuttle"` correctly resolves to Valentine Taiki Shuttle even though the shorter alias `"taiki shuttle"` also appears in the message.
 3. **Regex aliases** — entries written as `/pattern/` or `/pattern/flags` are tested against the full normalized message.
 
 **Regex alias example:**
@@ -153,15 +157,34 @@ If an image is missing the game shows a placeholder and keeps running.
 
 ---
 
+## State Persistence
+
+The game can save and restore state across restarts — including when the OBS source is hidden and re-shown, or when the server is restarted. This is controlled by the `persistence` setting:
+
+```json
+"persistence": {
+  "enabled": true
+}
+```
+
+When enabled, the following are written to `streak.json` at the start of every round:
+
+- **Recent picks** — the list of recently shown characters, so the repeat-avoidance history survives restarts. Without this, `recentHistorySize` only works within a single session.
+- **Streak** — the current streak holder and count (only if `streak.enabled` is also `true`).
+
+Set `persistence.enabled` to `false` to run entirely in-memory — all history resets on every reload.
+
+---
+
 ## Streak Tracking
 
-The game tracks consecutive correct answers by the same viewer. The current streak holder and count are saved to `streak.json` on disk after every change, and reloaded at the start of each round — so streaks survive an overlay reload or server restart.
+The game tracks consecutive correct answers by the same viewer.
 
 - The streak **increases** each time the same viewer answers correctly back-to-back.
 - The streak **resets** when a different viewer answers correctly, or when a round times out with no winner.
 - Once the streak reaches `announceThreshold`, the count is included in the win message posted to chat.
 
-Configure in `config.local.json`:
+Streak state survives restarts when `persistence.enabled` is `true`. Configure in `config.local.json`:
 
 ```json
 "streak": {
@@ -353,9 +376,15 @@ Text shown on the overlay and posted to chat. Supports `{winner}`, `{character}`
 
 | Key | Default | Description |
 |-----|---------|-------------|
-| `enabled` | `true` | Enables streak tracking. When disabled, no streak is tracked or displayed |
+| `enabled` | `true` | Enables streak tracking. When disabled, no streak is tracked or displayed. Streak state only survives restarts when `persistence.enabled` is also `true` |
 | `announceThreshold` | `2` | How many consecutive correct answers before the streak count appears in the chat win message. At `2`, the streak is mentioned from the second correct answer onward |
 | `overlayTemplate` | `"{winner} x{streak}"` | Text shown on the overlay while a streak is active. Hidden when the streak count is below `announceThreshold` |
+
+### `persistence`
+
+| Key | Default | Description |
+|-----|---------|-------------|
+| `enabled` | `true` | Master switch for saving and restoring state across restarts. When enabled, recent picks and streak state are written to `streak.json` at the start of every round. Set to `false` to run entirely in-memory — all history resets on every reload |
 
 ### `controls`
 
