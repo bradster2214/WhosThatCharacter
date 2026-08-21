@@ -412,7 +412,8 @@ Text shown on the overlay and posted to chat. Supports `{winner}`, `{character}`
 | `recentHistorySize` | `10` | How many recent picks to remember when avoiding repeats |
 | `pauseWhenNotLive` | `false` | When `true`, no round will start unless OBS is actively streaming or recording. This applies to the very first round on load as well as between rounds. The game polls every 5 seconds until you go live. Set to `false` when testing offline |
 | `goLiveDelaySeconds` | `0` | How many seconds to wait after detecting that OBS went live before starting the first round. Gives you time to get settled. Only applies when `pauseWhenNotLive` is `true` |
-| `autoStartAfterWin` | `true` | When `true` (default), the next round starts automatically after a correct guess. Set to `false` if you hide the OBS source immediately after each win — the reveal timers can otherwise fire during the unload window and write a ghost pick to `streak.json`. Timeouts (no winner) always continue automatically regardless of this setting |
+| `autoStartAfterWin` | `true` | When `true` (default), the next round starts automatically after a correct guess. Set to `false` if you hide the OBS source immediately after each win — the reveal timers can otherwise fire during the unload window and write a ghost pick to `streak.json` |
+| `autoStartAfterLoss` | `true` | Same as `autoStartAfterWin`, but for rounds that time out with no winner. Set both to `false` to run exactly one round per overlay load, resuming only when the overlay is reloaded |
 
 ### `files`
 

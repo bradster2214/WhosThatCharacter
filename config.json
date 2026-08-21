@@ -29,7 +29,8 @@
     "recentHistorySize": 10,
     "pauseWhenNotLive": false,
     "goLiveDelaySeconds": 0,
-    "autoStartAfterWin": true
+    "autoStartAfterWin": true,
+    "autoStartAfterLoss": true
   },
   "display": {
     "showDebugPanel": false,

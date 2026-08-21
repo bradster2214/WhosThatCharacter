@@ -4,6 +4,16 @@ All notable changes to this project will be documented here.
 
 ---
 
+## [1.9.0] — 2026-08-21
+
+### Added
+- `autoStartAfterLoss` config flag (default `true`) — mirrors `autoStartAfterWin` but applies to rounds that time out with no winner. Setting both flags to `false` makes the overlay run exactly one round per load, resuming only when it's reloaded
+
+### Changed
+- `autoStartAfterWin` no longer implicitly leaves timeouts always auto-continuing — that behavior is now controlled by the new `autoStartAfterLoss` flag (defaults preserve the old behavior)
+
+---
+
 ## [1.8.0] — 2026-06-06
 
 ### Added
