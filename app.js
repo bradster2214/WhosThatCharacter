@@ -519,6 +519,16 @@ function computeCurrency() {
   }
 }
 
+// autoStartAfterWin / autoStartAfterLoss let the next round be suppressed based on
+// how this round ended (win = someone guessed it, loss = it timed out with no winner).
+// This also prevents a ghost pick being added to history when the OBS source is shut
+// down immediately after a round ends (the timers could otherwise fire during the unload window).
+function shouldSuppressAutoStart(hasWinner, roundCfg) {
+  return hasWinner
+    ? roundCfg.autoStartAfterWin === false
+    : roundCfg.autoStartAfterLoss === false;
+}
+
 function revealAnswer(reason) {
   if (state.revealed) return;
   state.revealed = true;
@@ -558,12 +568,7 @@ function revealAnswer(reason) {
     sendChatMessage(msg);
   }
 
-  // If autoStartAfterWin is false, don't schedule the next round after a correct guess.
-  // This prevents a ghost pick being added to history when the OBS source is shut down
-  // immediately after a win (the timers could fire during the unload window).
-  // Timeouts (no winner) always continue automatically.
-  const suppressAutoStart = state.winner && state.config.round.autoStartAfterWin === false;
-  if (!suppressAutoStart) {
+  if (!shouldSuppressAutoStart(!!state.winner, state.config.round)) {
     scheduleNextRound();
   }
   updateDebugPanel();

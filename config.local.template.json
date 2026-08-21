@@ -87,8 +87,11 @@
     // Set to false if you hide the OBS source immediately after each win — otherwise
     // the reveal timers can fire during the unload window, picking a ghost character
     // that gets saved to streak.json before the page closes.
-    // Timeouts (no winner) always continue automatically regardless of this setting.
-    "autoStartAfterWin": true
+    "autoStartAfterWin": true,
+    // Same as autoStartAfterWin, but for rounds that time out with no winner.
+    // Set both this and autoStartAfterWin to false to run exactly one round per
+    // load and only pick again when the overlay is reloaded.
+    "autoStartAfterLoss": true
   },
 
   "controls": {
